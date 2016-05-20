@@ -27,8 +27,19 @@
 *.out
 
 # CMake
-.build/
+build/
 
 # IntelliJ
 .idea/
 *.app
+
+# Emacs
+[#]*[#]
+.[#]
+
+# Vim 
+*~
+*.swp
+*.swo
+
+

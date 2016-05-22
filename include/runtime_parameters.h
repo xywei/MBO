@@ -27,6 +27,7 @@ namespace mbox {
         double dt;
 
         // Heat eqn
+        double theta;
         unsigned int degree;
         unsigned int n_sub_steps;
         double eps;
@@ -34,6 +35,10 @@ namespace mbox {
         // Simulator
         double initial_time;
         double final_time;
+
+        // AMG preconditioner
+        unsigned int smoother_sweeps;
+        double aggregation_threshold;
 
         // AMR
         unsigned int n_initial_global_refines;
@@ -72,6 +77,9 @@ namespace mbox {
         prm->declare_entry ("n_sub_steps", "1",
                             Patterns::Integer(1,100),
                             "The number of time steps to take to solve heat equation in each MBO steps.");
+        prm->declare_entry ("theta", "0.5",
+                            Patterns::Double(0.),
+                            "The parameter for theta-scheme, can be explicit Euler (0), implicit Euler (1), Crank-Nicolson (0.5), etc.");
         prm->declare_entry ("theta_s", "60",
                             Patterns::Double(0.),
                             "The static contact angle, in degree." );
@@ -91,6 +99,12 @@ namespace mbox {
         prm->declare_entry ("degree", "1",
                            Patterns::Integer (1,5),
                            "The polynomial degree for the finite element space." );
+        prm->declare_entry ("smoother_sweeps", "2",
+                            Patterns::Integer (1, 100),
+                            "The number of smoother sweeps used in AMG preconditioner.");
+        prm->declare_entry ("aggregation_threshold", "0.02",
+                            Patterns::Double (0.),
+                            "(ad hoc) Larger aggregation_threshold will decrease the number of iterations, but increase the costs per iteration");
         prm->declare_entry ("eps", "1e-12",
                            Patterns::Double (0.),
                            "The stopping criterion for linear solvers.");
@@ -121,6 +135,7 @@ namespace mbox {
         {
             theta_s = prm->get_double ("theta_s");
 
+            theta = prm->get_double ("theta");
             dt = prm->get_double ("dt");
             initial_time = prm->get_double ("initial_time");
             final_time = prm->get_double ("final_time");
@@ -128,6 +143,9 @@ namespace mbox {
             degree = prm->get_integer ("degree");
             n_sub_steps = prm->get_integer ("n_sub_steps");
             eps = prm->get_double ("eps");
+
+            smoother_sweeps = prm->get_integer("smoother_sweeps");
+            aggregation_threshold = prm->get_double("aggregation_threshold");
 
             n_initial_global_refines = prm->get_integer ("n_initial_global_refines");
             n_initial_adaptive_refines = prm->get_integer ("n_initial_adaptive_refines");

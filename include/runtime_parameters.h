@@ -45,6 +45,7 @@ namespace mbox {
         unsigned int n_initial_adaptive_refines;
         unsigned int max_adaptation_level;
         unsigned int adaptation_interval;
+        unsigned int n_adaptation_sweeps;
 
         // I/O
         bool verbose;
@@ -77,16 +78,19 @@ namespace mbox {
         prm->declare_entry ("n_sub_steps", "1",
                             Patterns::Integer(1,100),
                             "The number of time steps to take to solve heat equation in each MBO steps.");
-        prm->declare_entry ("theta", "0.5",
+        prm->declare_entry ("theta", "1.0",
                             Patterns::Double(0.),
                             "The parameter for theta-scheme, can be explicit Euler (0), implicit Euler (1), Crank-Nicolson (0.5), etc.");
         prm->declare_entry ("theta_s", "60",
                             Patterns::Double(0.),
                             "The static contact angle, in degree." );
 
-        prm->declare_entry ("adaptation_interval", "3",
+        prm->declare_entry ("adaptation_interval", "5",
                             Patterns::Integer (1, 100),
                             "The number of MBO steps between two AMRs.");
+        prm->declare_entry ("n_adaptation_sweeps", "5",
+                            Patterns::Integer (1, 100),
+                            "The number of sweeps for each adaptation.");
         prm->declare_entry ("max_adaptation_level", "8",
                             Patterns::Integer (0, 20),
                             "Maximal difference in level between the most coarse and the most fine cells.");
@@ -116,7 +120,7 @@ namespace mbox {
                            " This indicates whether the output of the solution "
                                    "process should be verbose. ");
 
-        prm->declare_entry ("output_interval", "1",
+        prm->declare_entry ("output_interval", "10",
                            Patterns::Integer(1),
                            " This indicates between how many time steps we print "
                                    "the solution. ");
@@ -151,6 +155,7 @@ namespace mbox {
             n_initial_adaptive_refines = prm->get_integer ("n_initial_adaptive_refines");
             max_adaptation_level = prm->get_integer ("max_adaptation_level");
             adaptation_interval = prm->get_integer ("adaptation_interval");
+            n_adaptation_sweeps = prm->get_integer ("n_adaptation_sweeps");
         }
         prm->leave_subsection ();
 

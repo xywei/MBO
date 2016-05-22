@@ -333,7 +333,7 @@ namespace mbox {
                 if (criteria(cell_no) > 1e-2) {
                     cell->set_refine_flag ();
                 }
-                else if (criteria(cell_no) < 1e-12) {
+                else if (criteria(cell_no) < 1e-3) {
                     cell->set_coarsen_flag ();
                 }
             }
@@ -627,9 +627,13 @@ namespace mbox {
                     solve_system ();
                 }
 
+                apply_threshold ();
+
                 if (timestep_number_%prm_->adaptation_interval==0) {
                     LogStream::Prefix adapt_prefix ("ADAPT");
-                    refine_mesh ();
+                    for (unsigned int s=0; s<prm_->n_adaptation_sweeps; s++) {
+                        refine_mesh ();
+                    }
                     assemble_system_matrix (ddt);
                     deallog << "Mesh updated." << std::endl;
                     print_system_info ();
@@ -640,7 +644,6 @@ namespace mbox {
                     output_solution ();
                 }
 
-                apply_threshold ();
             }
         }
 

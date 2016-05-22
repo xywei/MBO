@@ -57,10 +57,7 @@ int main (int argc, char *argv[])
         deallog.depth_console (param->verbose ? 99 : 0);
         switch (param->dim) {
             case 1: {
-                deallog << "Running on 1-dimensional domain." << std::endl;
-                Simulator<1> simulator (param);
-                deallog << "Simulator initialized." << std::endl;
-                simulator.run ();
+                deallog << "Cannot run on 1-dimensional domain due to MPI compatibility." << std::endl;
                 break;
             }
             case 2: {

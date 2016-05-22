@@ -25,7 +25,8 @@ DEAL_II_SETUP_TARGET(mbox)
 
 ADD_CUSTOM_TARGET(clear
         COMMAND rm -rf ${CMAKE_BINARY_DIR}/output/*
-        COMMENT "Deleted all output stuff"
+        COMMAND rm ${CMAKE_BINARY_DIR}/input/*.prm
+        COMMENT "Deleted all output stuff and generated parameter files"
         )
 
 ADD_CUSTOM_TARGET(debug

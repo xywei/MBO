@@ -87,13 +87,13 @@ namespace mbox {
         prm->declare_entry ("adaptation_interval", "3",
                             Patterns::Integer (1, 100),
                             "The number of MBO steps between two AMRs.");
-        prm->declare_entry ("max_adaptation_level", "10",
+        prm->declare_entry ("max_adaptation_level", "8",
                             Patterns::Integer (0, 20),
                             "Maximal difference in level between the most coarse and the most fine cells.");
-        prm->declare_entry ("n_initial_global_refines", "3",
+        prm->declare_entry ("n_initial_global_refines", "2",
                            Patterns::Integer (0, 15),
                            "The number of global refines we do on the mesh before start adaptive refinement. ");
-        prm->declare_entry ("n_initial_adaptive_refines", "3",
+        prm->declare_entry ("n_initial_adaptive_refines", "8",
                             Patterns::Integer (0, 15),
                             "The number of adaptive refines we do on the globally refined mesh before start of time integration.");
         prm->declare_entry ("degree", "1",

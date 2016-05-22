@@ -16,6 +16,7 @@
 
 #include <deal.II/distributed/solution_transfer.h>
 #include <deal.II/distributed/tria.h>
+#include <deal.II/distributed/grid_refinement.h>
 
 #include <deal.II/lac/full_matrix.h>
 #include <deal.II/lac/solver_cg.h>
@@ -80,6 +81,7 @@ namespace mbox {
         void print_volume_info (const std::vector<double> &);
 
         void compute_volumes (std::vector<double> &);
+        double compute_volume_phase (unsigned int, double);
 
         parallel::distributed::Triangulation<dim> triangulation_;
 
@@ -261,6 +263,52 @@ namespace mbox {
     }
 
     template <int dim>
+    double Simulator<dim>::compute_volume_phase (unsigned int phase, double lambda) {
+        // compute the volume of a certain phase above lambda
+        AssertThrow (phase >= 0 && phase <= 3, ExcNotImplemented ());
+
+        double v = 0.0;
+        const QGauss<dim> quadrature_formula (prm_->degree + 1);
+        FEValues<dim> fe_values (fe_, quadrature_formula,
+                                 update_values | update_JxW_values);
+        const unsigned int dofs_per_cell = fe_.dofs_per_cell;
+        const unsigned int n_q_points    = quadrature_formula.size ();
+
+        std::vector<double> u_values (n_q_points);
+
+        auto cell = dof_handler_.begin_active ();
+        auto endc = dof_handler_.end ();
+        for (; cell != endc; cell++) {
+            fe_values.reinit (cell);
+            switch (phase) {
+                case 0: {
+                    fe_values.get_function_values (u0_, u_values);
+                    break;
+                }
+                case 1: {
+                    fe_values.get_function_values (u1_, u_values);
+                    break;
+                }
+                case 2: {
+                    fe_values.get_function_values (u2_, u_values);
+                    break;
+                }
+                default: {
+                    AssertThrow (false, ExcNotImplemented());
+                }
+            }
+            for (unsigned int q=0; q<n_q_points; q++) {
+                // Compute the volume AFTER applying threshold.
+                if (u_values[q] > lambda) {
+                    v += fe_values.JxW (q);
+                }
+            }
+        }
+
+        return v;
+    }
+
+    template <int dim>
     void Simulator<dim>::setup_system() {
         dof_handler_.distribute_dofs (fe_);
 
@@ -301,8 +349,8 @@ namespace mbox {
         const UpdateFlags update_flags = update_gradients;
         FEValues<dim> fe_values (fe_, quadrature_formula, update_flags);
 
-        TrilinosWrappers::MPI::Vector criteria;
-        criteria.reinit (cell_partition, MPI_COMM_WORLD);
+        Vector<double> criteria;
+        criteria.reinit (triangulation_.n_active_cells ());
 
         std::vector<Tensor<1,dim>> du0 (1, Tensor<1,dim>());
         std::vector<Tensor<1,dim>> du1 (1, Tensor<1,dim>());
@@ -330,10 +378,10 @@ namespace mbox {
             auto cell = dof_handler_.begin_active ();
             auto endc = dof_handler_.end ();
             for (unsigned int cell_no = 0; cell != endc; cell++, cell_no++) {
-                if (criteria(cell_no) > 1e-2) {
+                if (criteria(cell_no) > 1.0) {
                     cell->set_refine_flag ();
                 }
-                else if (criteria(cell_no) < 1e-3) {
+                else {
                     cell->set_coarsen_flag ();
                 }
             }
@@ -346,11 +394,6 @@ namespace mbox {
                  cell ++) {
                 cell->clear_refine_flag ();
             }
-        for (auto cell = triangulation_.begin_active(min_grid_level);
-             cell != triangulation_.end();
-             cell ++ ) {
-            cell->clear_coarsen_flag ();
-        }
 
         // Solution transfer
         parallel::distributed::SolutionTransfer<dim, TrilinosWrappers::MPI::Vector> solution_trans0 (dof_handler_);
@@ -425,7 +468,39 @@ namespace mbox {
      */
     template <int dim>
     void Simulator<dim>::apply_conservative_threshold () {
+        // Solid phase is fixed as initial
+        VectorTools::interpolate (dof_handler_, InitialValues0<dim> (), u0_);
 
+        double lm1 = 0.51;
+        double lm2 = 0.49;
+        double v1 = compute_volume_phase (1, lm1) - volume_[1];
+        double v2 = compute_volume_phase (1, lm2) - volume_[1];
+        // Secant method suffers from stability issues.
+        // Therefore, we stop searching when residual stops decreasing.
+        unsigned int iter = 0;
+        while (std::fabs(v2) < std::fabs(v1) || iter == 0 ) {
+            iter++;
+            double tmp = lm2 - v2 * ( lm1 - lm2 ) / ( v1 - v2 );
+            lm1 = lm2;
+            lm2 = tmp;
+            v1 = v2;
+            v2 = compute_volume_phase (1, lm2) - volume_[1];
+        }
+
+        deallog << "Secant method converges in " << iter << " steps" << std::endl;
+        deallog << "               at lambda = " << lm2 << std::endl;
+        deallog << "           with residual = " << std::fabs(v2) << std::endl;
+
+        for (unsigned int i=0; i<u0_.size (); i++) {
+            if (u1_[i] > lm2) {
+                u1_[i] = 1.0 - u0_[i];
+                u2_[i] = 0.0;
+            }
+            else {
+                u1_[i] = 0.0;
+                u2_[i] = 1.0 - u0_[i];
+            }
+        }
     }
 
     template <int dim>
@@ -627,18 +702,22 @@ namespace mbox {
                     solve_system ();
                 }
 
-                apply_threshold ();
+                if (prm_->conservative) {
+                    apply_conservative_threshold ();
+                }
+                else {
+                    apply_threshold ();
+                }
 
                 if (timestep_number_%prm_->adaptation_interval==0) {
                     LogStream::Prefix adapt_prefix ("ADAPT");
                     for (unsigned int s=0; s<prm_->n_adaptation_sweeps; s++) {
-                        refine_mesh ();
+                        refine_mesh();
                     }
                     assemble_system_matrix (ddt);
                     deallog << "Mesh updated." << std::endl;
                     print_system_info ();
                 }
-
 
                 if (timestep_number_%prm_->output_interval==0) {
                     output_solution ();

@@ -22,6 +22,7 @@ namespace mbox {
 
         // Equation
         double theta_s;
+        bool conservative;
 
         // MBO
         double dt;
@@ -66,12 +67,15 @@ namespace mbox {
         prm->leave_subsection ();
 
         prm->enter_subsection ("Algorithm");
+        prm->declare_entry ("conservative", "true",
+                            Patterns::Bool(),
+                            "Whether threshold preserves volume of each phase (Allen-Cahn vs Cahn-Hilliard).");
         prm->declare_entry ("initial_time", "0.",
                            Patterns::Double (0.),
-                           " The initial time of the simulation. ");
+                           "The initial time of the simulation. ");
         prm->declare_entry ("final_time", "1.",
                            Patterns::Double (0.),
-                           " The final time of the simulation. ");
+                           "The final time of the simulation. ");
         prm->declare_entry ("dt", "0.001",
                             Patterns::Double(0.),
                             "The time step size for MBO." );
@@ -137,6 +141,7 @@ namespace mbox {
 
         prm->enter_subsection ("Algorithm");
         {
+            conservative = prm->get_bool ("conservative");
             theta_s = prm->get_double ("theta_s");
 
             theta = prm->get_double ("theta");

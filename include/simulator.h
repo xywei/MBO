@@ -9,7 +9,7 @@
 #include "runtime_parameters.h"
 
 // Switching initial conditions
-#include "initial_bubble_in_the_air.h"
+#include "initial_elliptic_drop_in_the_air.h"
 
 // Deal.II
 #include <deal.II/base/utilities.h>
@@ -468,9 +468,10 @@ namespace mbox {
      */
     template <int dim>
     void Simulator<dim>::apply_conservative_threshold () {
-        // Solid phase is fixed as initial
-        VectorTools::interpolate (dof_handler_, InitialValues0<dim> (), u0_);
 
+        for (unsigned int i=0; i<u0_.size (); i++) {
+            u1_[i] -= std::cos (prm_->theta_s / 180.0 * numbers::PI) * u0_[i];
+        }
         double lm1 = 0.51;
         double lm2 = 0.49;
         double v1 = compute_volume_phase (1, lm1) - volume_[1];
@@ -490,6 +491,9 @@ namespace mbox {
         deallog << "Secant method converges in " << iter << " steps" << std::endl;
         deallog << "               at lambda = " << lm2 << std::endl;
         deallog << "           with residual = " << std::fabs(v2) << std::endl;
+
+        // Solid phase is fixed as initial
+        VectorTools::interpolate (dof_handler_, InitialValues0<dim> (), u0_);
 
         for (unsigned int i=0; i<u0_.size (); i++) {
             if (u1_[i] > lm2) {

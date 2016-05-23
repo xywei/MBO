@@ -10,14 +10,11 @@
  */
 
 /**
- * This file defines the two-phase case, no solid. Initially
- * an elliptic liquid droplet is floating in the air.
- *
  * Assuming computational domain is [0,1]^dim.
  */
 
-#ifndef MBOX_INITIAL_ELLIPTIC_DROP_IN_THE_AIR_H
-#define MBOX_INITIAL_ELLIPTIC_DROP_IN_THE_AIR_H
+#ifndef MBOX_INITIAL_DROP_ON_FLAT_SURFACE
+#define MBOX_INITIAL_DROP_ON_FLAT_SURFACE
 
 #include "config.h"
 #include <deal.II/base/function.h>
@@ -86,7 +83,7 @@ namespace mbox {
     InitialValues0<dim>::value(const Point<dim> &p,
                                const unsigned int c) const {
         AssertThrow (c == 0, ExcNotImplemented());
-        return 0.0;
+        return (p[dim-1]<0.50 ? 1.0 : 0.0);
     }
 
 
@@ -97,8 +94,8 @@ namespace mbox {
         AssertThrow (c == 0, ExcNotImplemented());
 
         std::vector<double> R;
-        R.push_back(0.3);
-        R.push_back(0.2);
+        R.push_back(0.1);
+        R.push_back(0.1);
         R.push_back(0.1);
 
         double weighted_distance = 0.0;
@@ -106,7 +103,7 @@ namespace mbox {
             weighted_distance += (p[d] - 0.5) * (p[d] - 0.5) / R[d] / R[d];
         }
 
-        return (weighted_distance > 1.0 ? 1.0 : 0.0);
+        return (weighted_distance > 1.0 && p[dim-1] >= 0.50 ? 1.0 : 0.0);
     }
 
     template<int dim>
@@ -116,8 +113,8 @@ namespace mbox {
         AssertThrow (c == 0, ExcNotImplemented());
 
         std::vector<double> R;
-        R.push_back(0.3);
-        R.push_back(0.2);
+        R.push_back(0.1);
+        R.push_back(0.1);
         R.push_back(0.1);
 
         double weighted_distance = 0.0;
@@ -125,10 +122,10 @@ namespace mbox {
             weighted_distance += (p[d] - 0.5) * (p[d] - 0.5) / R[d] / R[d];
         }
 
-        return (weighted_distance > 1.0 ? 0.0 : 1.0);
+        return (weighted_distance <= 1.0 && p[dim-1] >=0.50 ? 1.0 : 0.0);
     }
 
 
 }
 
-#endif //MBOX_INITIAL_ELLIPTIC_DROP_IN_THE_AIR_H
+#endif //MBOX_INITIAL_DROP_ON_FLAT_SURFACE_H

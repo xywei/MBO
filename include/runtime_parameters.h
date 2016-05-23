@@ -19,6 +19,7 @@ namespace mbox {
 
         // Geometry
         unsigned dim;
+        unsigned initial_condition;
 
         // Equation
         double theta_s;
@@ -64,6 +65,9 @@ namespace mbox {
         prm->declare_entry ("dim", "2",
                             Patterns::Integer(1, 3),
                             "The dimension of computational domain.");
+        prm->declare_entry("initial_profile", "elliptic_drop_in_the_air",
+                           Patterns::Selection ("elliptic_drop_in_the_air|"
+                                                        "drop_on_flat_surface"));
         prm->leave_subsection ();
 
         prm->enter_subsection ("Algorithm");
@@ -136,6 +140,16 @@ namespace mbox {
         prm->enter_subsection ("Geometry");
         {
             dim = prm->get_integer ("dim");
+            std::string init = prm->get("initial_profile");
+            if (init.compare("elliptic_drop_in_the_air")==0) {
+                initial_condition = 0;
+            }
+            else if (init.compare("drop_on_flat_surface")==0) {
+                initial_condition = 1;
+            }
+            else {
+                AssertThrow(false, ExcNotImplemented());
+            }
         }
         prm->leave_subsection ();
 

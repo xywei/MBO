@@ -9,7 +9,13 @@
 #include "runtime_parameters.h"
 
 // Switching initial conditions
+#ifdef INIT_0
 #include "initial_elliptic_drop_in_the_air.h"
+#endif
+
+#ifdef INIT_1
+#include "initial_drop_on_flat_surface.h"
+#endif
 
 // Deal.II
 #include <deal.II/base/utilities.h>
@@ -471,32 +477,33 @@ namespace mbox {
 
         for (unsigned int i=0; i<u0_.size (); i++) {
             u1_[i] -= std::cos (prm_->theta_s / 180.0 * numbers::PI) * u0_[i];
+            u1_[i] -= u2_[i];
         }
-        double lm1 = 0.51;
-        double lm2 = 0.49;
-        double v1 = compute_volume_phase (1, lm1) - volume_[1];
-        double v2 = compute_volume_phase (1, lm2) - volume_[1];
+        double delta1 = 0.0;
+        double delta2 = 0.01;
+        double v1 = compute_volume_phase (1, delta1) - volume_[1];
+        double v2 = compute_volume_phase (1, delta2) - volume_[1];
         // Secant method suffers from stability issues.
         // Therefore, we stop searching when residual stops decreasing.
         unsigned int iter = 0;
         while (std::fabs(v2) < std::fabs(v1) || iter == 0 ) {
             iter++;
-            double tmp = lm2 - v2 * ( lm1 - lm2 ) / ( v1 - v2 );
-            lm1 = lm2;
-            lm2 = tmp;
+            double tmp = delta2 - v2 * ( delta1 - delta2 ) / ( v1 - v2 );
+            delta1 = delta2;
+            delta2 = tmp;
             v1 = v2;
-            v2 = compute_volume_phase (1, lm2) - volume_[1];
+            v2 = compute_volume_phase (1, delta2) - volume_[1];
         }
 
         deallog << "Secant method converges in " << iter << " steps" << std::endl;
-        deallog << "               at lambda = " << lm2 << std::endl;
+        deallog << "               at lambda = " << delta2 << std::endl;
         deallog << "           with residual = " << std::fabs(v2) << std::endl;
 
         // Solid phase is fixed as initial
         VectorTools::interpolate (dof_handler_, InitialValues0<dim> (), u0_);
 
         for (unsigned int i=0; i<u0_.size (); i++) {
-            if (u1_[i] > lm2) {
+            if (u1_[i] > delta2) {
                 u1_[i] = 1.0 - u0_[i];
                 u2_[i] = 0.0;
             }

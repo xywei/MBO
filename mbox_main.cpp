@@ -11,6 +11,11 @@
  * May 16, 2016
  */
 
+// define INIT_0 to run case "drop in the air"
+// define INIT_1 to run case "drop on flat surface"
+#undef INIT_0
+#define INIT_1
+
 #include "include/simulator.h"
 
 int main (int argc, char *argv[])

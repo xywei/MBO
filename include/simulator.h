@@ -19,6 +19,7 @@
 
 // Deal.II
 #include <deal.II/base/utilities.h>
+#include <deal.II/base/timer.h>
 
 #include <deal.II/distributed/solution_transfer.h>
 #include <deal.II/distributed/tria.h>
@@ -683,6 +684,9 @@ namespace mbox {
 
         {
             LogStream::Prefix prefix ("MBOX");
+            TimerOutput timer (std::cout, TimerOutput::summary,
+                               TimerOutput::wall_times);
+
             TrilinosWrappers::MPI::Vector tmp0;
             TrilinosWrappers::MPI::Vector tmp1;
             TrilinosWrappers::MPI::Vector tmp2;
@@ -691,13 +695,17 @@ namespace mbox {
             const double ddt = prm_->dt / prm_->n_sub_steps;
             const double theta = prm_->theta;
 
+            timer.enter_subsection ("Initialization");
             initialize_simulator ();
             compute_volumes (volume_);
             assemble_system_matrix (ddt);
+            timer.leave_subsection ();
 
+            timer.enter_subsection ("Output");
             print_system_info ();
             print_volume_info (volume_);
             output_solution ();
+            timer.leave_subsection ();
 
             double time = 0;
             while (time < prm_->final_time) {
@@ -705,6 +713,7 @@ namespace mbox {
                 timestep_number_++;
                 deallog << "Time step " << timestep_number_ << " on t = " << time << std::endl;
 
+                timer.enter_subsection ("Heat solver");
                 for (unsigned substep_number = 0;
                      substep_number<prm_->n_sub_steps;
                      substep_number++) {
@@ -712,15 +721,19 @@ namespace mbox {
                     assemble_system_rhs (ddt);
                     solve_system ();
                 }
+                timer.leave_subsection ();
 
+                timer.enter_subsection ("Thresholding");
                 if (prm_->conservative) {
                     apply_conservative_threshold ();
                 }
                 else {
                     apply_threshold ();
                 }
+                timer.leave_subsection ();
 
                 if (timestep_number_%prm_->adaptation_interval==0) {
+                    timer.enter_subsection ("Mesh adaptation");
                     LogStream::Prefix adapt_prefix ("ADAPT");
                     for (unsigned int s=0; s<prm_->n_adaptation_sweeps; s++) {
                         refine_mesh();
@@ -728,10 +741,13 @@ namespace mbox {
                     assemble_system_matrix (ddt);
                     deallog << "Mesh updated." << std::endl;
                     print_system_info ();
+                    timer.leave_subsection ();
                 }
 
                 if (timestep_number_%prm_->output_interval==0) {
+                    timer.enter_subsection ("Output");
                     output_solution ();
+                    timer.leave_subsection ();
                 }
 
             }

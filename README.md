@@ -2,7 +2,9 @@
 
 An implementation of the classic Merriman-Bence-Osher (MBO) scheme.
 
-Particularly it is adapted to solve problems on solid surfaces.
+Particularly it is adapted to solve problems on solid surfaces. There are two variants, one without volume conservation
+constraints, analogous to Allen-Cahn equation; the other with volume conservation constraints, similar to Cahn-Hilliard
+equation.
 
 ## Dependencies
 

@@ -94,9 +94,9 @@ namespace mbox {
         AssertThrow (c == 0, ExcNotImplemented());
 
         std::vector<double> R;
-        R.push_back(0.1);
-        R.push_back(0.1);
-        R.push_back(0.1);
+        R.push_back(0.25);
+        R.push_back(0.25);
+        R.push_back(0.25);
 
         double weighted_distance = 0.0;
         for (unsigned int d = 0; d < dim; d++) {
@@ -113,9 +113,9 @@ namespace mbox {
         AssertThrow (c == 0, ExcNotImplemented());
 
         std::vector<double> R;
-        R.push_back(0.1);
-        R.push_back(0.1);
-        R.push_back(0.1);
+        R.push_back(0.25);
+        R.push_back(0.25);
+        R.push_back(0.25);
 
         double weighted_distance = 0.0;
         for (unsigned int d = 0; d < dim; d++) {

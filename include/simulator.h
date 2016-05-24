@@ -480,31 +480,43 @@ namespace mbox {
             u1_[i] -= std::cos (prm_->theta_s / 180.0 * numbers::PI) * u0_[i];
             u1_[i] -= u2_[i];
         }
-        double delta1 = 0.0;
-        double delta2 = 0.01;
-        double v1 = compute_volume_phase (1, delta1) - volume_[1];
-        double v2 = compute_volume_phase (1, delta2) - volume_[1];
+
+        // Solid phase is fixed as initial
+        VectorTools::interpolate (dof_handler_, InitialValues0<dim> (), u0_);
+        // Truncate heat inside solid phase
+        for (unsigned int i=0; i<u0_.size(); i++) {
+            u1_[i] -= u1_[i] * u0_[i];
+            u2_[i] -= u2_[i] * u0_[i];
+        }
+
+        double delta1 = 1.0;
+        double delta2 = -1.0;
+        double v1 = compute_volume_phase (1, std::erf(delta1)) - volume_[1];
+        double v2 = compute_volume_phase (1, std::erf(delta2)) - volume_[1];
         // Secant method suffers from stability issues.
         // Therefore, we stop searching when residual stops decreasing.
+        // (when the signed residual value changes only a little between steps)
         unsigned int iter = 0;
-        while (std::fabs(v2) < std::fabs(v1) || iter == 0 ) {
+        const int max_iter = 50;
+        while (std::fabs(v2) > 1e-6 && std::fabs(v1 - v2) > 1e-6) {
             iter++;
+            if (iter > max_iter) {
+                break;
+            }
             double tmp = delta2 - v2 * ( delta1 - delta2 ) / ( v1 - v2 );
             delta1 = delta2;
             delta2 = tmp;
             v1 = v2;
-            v2 = compute_volume_phase (1, delta2) - volume_[1];
+            v2 = compute_volume_phase(1, std::erf(delta2)) - volume_[1];
+            // deallog << v2 << std::endl;
         }
 
         deallog << "Secant method converges in " << iter << " steps" << std::endl;
         deallog << "               at lambda = " << delta2 << std::endl;
         deallog << "           with residual = " << std::fabs(v2) << std::endl;
 
-        // Solid phase is fixed as initial
-        VectorTools::interpolate (dof_handler_, InitialValues0<dim> (), u0_);
-
         for (unsigned int i=0; i<u0_.size (); i++) {
-            if (u1_[i] > delta2) {
+            if (u1_[i] > std::erf(delta2)) {
                 u1_[i] = 1.0 - u0_[i];
                 u2_[i] = 0.0;
             }
@@ -750,6 +762,13 @@ namespace mbox {
                     timer.leave_subsection ();
                 }
 
+                std::vector<double> final_volume_errors (3, 0.0);
+                compute_volumes(final_volume_errors);
+                for (unsigned int i=0; i<3; i++) {
+                    final_volume_errors[i] -= volume_[i];
+                    final_volume_errors[i] /= volume_[i];
+                }
+                print_volume_info(final_volume_errors);
             }
         }
 

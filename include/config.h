@@ -17,6 +17,8 @@
 #include <sys/stat.h>
 #include <type_traits>
 
+#include <fgt.hpp>
+
 #include <deal.II/base/logstream.h>
 #include <deal.II/base/conditional_ostream.h>
 

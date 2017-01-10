@@ -31,7 +31,7 @@ namespace mbox {
     public:
         InitialValues0() : Function<dim>(/*n_component = */1) { };
 
-        virtual double value(const Point<dim> &p,
+        virtual double value(const Point<dim> &/*p*/,
                              const unsigned int component = 0) const;
     };
 
@@ -83,7 +83,7 @@ namespace mbox {
 
     template<int dim>
     double
-    InitialValues0<dim>::value(const Point<dim> &p,
+    InitialValues0<dim>::value(const Point<dim> &/*p*/,
                                const unsigned int c) const {
         AssertThrow (c == 0, ExcNotImplemented());
         return 0.0;

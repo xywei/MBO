@@ -1,0 +1,3 @@
+[submodule "external/fgt"]
+	path = external/fgt
+	url = https://github.com/gadomski/fgt

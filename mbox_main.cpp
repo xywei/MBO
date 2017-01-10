@@ -13,8 +13,8 @@
 
 // define INIT_0 to run case "drop in the air"
 // define INIT_1 to run case "drop on flat surface"
-#undef INIT_0
-#define INIT_1
+#define INIT_0
+#undef INIT_1
 
 #include "include/simulator.h"
 

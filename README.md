@@ -6,6 +6,8 @@ Particularly it is adapted to solve problems on solid surfaces. There are two va
 constraints, analogous to Allen-Cahn equation; the other with volume conservation constraints, similar to Cahn-Hilliard
 equation.
 
+This branch uses fast Gauss transform to solve the heat equation.
+
 ## Dependencies
 
 - Deal.II (with interface for Trilinos)

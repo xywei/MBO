@@ -1,10 +1,16 @@
 cmake_minimum_required(VERSION 3.4)
+set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+
 
 # Find packages
 FIND_PACKAGE(deal.II 8.3.0 REQUIRED
              HINTS ${deal.II_DIR} ${DEAL_II_DIR} /opt/dealii /usr $ENV{DEAL_II_DIR}
             )
 DEAL_II_INITIALIZE_CACHED_VARIABLES()
+
+find_package(Fgt REQUIRED
+  HINTS ${FGT_DIR} $ENV{FGT_DIR} ~/apps/fgt 
+  )
 
 project(MBOX LANGUAGES CXX)
 
@@ -22,6 +28,11 @@ file(COPY ${CMAKE_SOURCE_DIR}/input DESTINATION ${CMAKE_BINARY_DIR})
 set(MBOX_SOURCE mbox_main.cpp)
 add_executable(mbox ${MBOX_SOURCE})
 DEAL_II_SETUP_TARGET(mbox)
+
+target_link_libraries(mbox
+    PUBLIC
+    Fgt::Library-C++
+    )
 
 ADD_CUSTOM_TARGET(clear
         COMMAND rm -rf ${CMAKE_BINARY_DIR}/output/*

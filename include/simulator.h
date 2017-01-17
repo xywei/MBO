@@ -17,6 +17,10 @@
 #include "initial_drop_on_flat_surface.h"
 #endif
 
+#ifdef INIT_2
+#include "initial_drop_on_rough_surface.h"
+#endif
+
 // Deal.II
 #include <deal.II/base/utilities.h>
 #include <deal.II/base/timer.h>
